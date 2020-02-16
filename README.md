@@ -5,6 +5,14 @@ javascript의 모든 것을 알아보자
 * JavaScript 개념 다시 정리  
 * ES15 이후의 문법 익히기  
 
+# 주요 개념 설명 Link  
+
+* [JavaScript의 데이터 타입과 연산자](./inside-javascript/README.md/#)  
+
+# 프로젝트별 분류  
+
+* [Inside JavaScript 내용 정리](./inside-javascript/README.md)  
+
 ### Reference  
 
 * [[도서] Insight JavaScript](http://book.interpark.com/product/BookDisplay.do?_method=detail&sc.prdNo=213715769&gclid=CjwKCAiA-P7xBRAvEiwAow-VacejQXQZyAmk-X2glugQrrKY4K9JHKMZ3z04W_PZ3KqENtp5toch1RoCpCUQAvD_BwE)  
