@@ -8,6 +8,7 @@ JavaScript의 모든 것을 알아보자
 ## 주요 개념 설명 Link  
 
 * [JavaScript의 데이터 타입과 연산자](./inside-javascript/README.md/#03-자바스크립트-데이터-타입과-연산자)  
+* [함수와 프로토타입 체이닝](./inside-javascript/README.md/#04-함수와-프로토타입-체이닝)  
 
 ## 프로젝트별 분류  
 
