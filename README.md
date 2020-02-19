@@ -3,7 +3,7 @@
 JavaScript의 모든 것을 알아보자  
 
 * JavaScript 개념 다시 정리 (INSIDE JavaScript)  
-* ES15 이후의 문법 익히기  
+* ES5 이후의 문법 익히기  
 
 ## 주요 개념 설명 Link  
 
