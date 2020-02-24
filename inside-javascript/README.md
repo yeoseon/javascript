@@ -1275,5 +1275,157 @@ printFunc();
 > bar()에서는 "bar and x = undefined"가 출력된다.  
 > x에 1이 할당되기 전에 실행했기 때문이다.  
 
+## 클로저
+
+### 클로저의 개념  
+
+``` 
+function otherFunc() {
+    var x = 10;
+    var innerFunc = function() {
+        console.log(x);
+    }
+    return innerFunc;
+}
+
+var inner = outerFunc();
+inner(); //10
+```
+* innerFunc() 의 [[scope]]은 outerFunc 변수 객체와 전역 객체를 가진다.  
+* outerFunc()이 끝난 후 실행되는데, outerFunc의 실행 컨텍스트가 사라진 후에 innerFunc의 실행 컨텍스트가 생성되는 것인데, 스코프 체인은 여전히 outerFunc의 변수 객체를 참조한다?  
+* outerFunc 실행 컨텍스트는 사라졌지만, outerFunc 변수 객체는 여전히 남아있고, innerFunc의 스코프 체인으로 참조되고 있다. 이게 바로 **클로저**  
+
+자바스크립트 함수는 일급 객체로 취급된다.  
+최종 반환되는 함수가 외부 함수의 지역 변수에 접근하고 있다는 것이 주요하다.  
+이 지역변수에 접근하려면 함수가 종료되어 외부 함수의 컨텍스트가 반환되더라도 **변수 객체는 반환되는 내부 함수의 스코프 체인에 그대로 남아있어야 접근할 수 있다.**  
+
+**이미 생명 주기가 끝난 외부 함수의 변수를 참조하는 함수를 클로저라고 한다.**  
+**클로저로 참조되는 외부 변수를 자유변수라고 한다.**  
+
+위의 예시가 클로저의 전형적인 패턴이다.  
+* 외부 함수에서 새로운 함수가 반환된다.  
+* 이 반환된 함수가 클로저이다.  
+* 클로저는 자유변수를 묶고 있다.  
+* 반환된 클로저는 새로운 함수로 사용된다.  
+* 이 패턴을 통해 함수형 프로그래밍이 가능하다.  
+
+```
+function outerFunc(arg1, arg2) {
+    var local = 8;
+    function innerFunc(innerArg) {
+        console.log((arg1 + arg2)/(innerArg + local));
+    }
+
+    return innerFunc;
+}
+
+var exam1 = outerFunc(2, 4);
+exam1(2);
+```
+* outerFunc() 함수를 호출하고 반환되는 함수 객체인 innerFunc()가 exam1 으로 참조된다. 이것은 exam1(n)의 형태로 실행될 수 있다.  
+* outerFunc()가 실행되면서 생성되는 변수객체가 스코프체인에 들어가게 된다.  
+* 이 스코프 체인은 innerFunc()의 스코프 체인으로 참조된다.  
+* outerFunc()의 함수가 종료되었지만, 여전히 내부 함수(innerFunc())의 [[scope]]로 참조되므로 가비지 컬랙션 대상이 되지 ㅇ낳는다.  
+* 따라서 이후에 exam1(n)을 호출하여도 innerFunc()에서 참조하고자 하는 변수 local에 접근할 수 있다.  
+이 outerFunc 변수 객체의 프로퍼티 값은 읽기 및 쓰기 까지 가능하다.  
+
+> **클로저의 성능**  
+> innerfunc()에서 접근하는 변수 대부분이 스코프 체인의 첫번째 객체가 아닌 그 이후의 객체에 존재한다.  
+> 이는 성능 문제를 유발시킬 수 있다.  
+> 대부분의 클로저에서는 스코프 체인에서 뒤쪽에 있는 객체에 자주 접근한다.  
+> 클로저를 영리하게 사용하려면 경험이 많이 필요하다.  
+
+### 클로저의 활용  
+
+#### 특정 함수에 사용자가 정의한 객체의 메서드 연결하기  
+
+```
+function HelloFunc(func) {
+    this.greeting = "hello";
+}
+
+HelloFunc.prototype.call = function(func) {
+    func ? func(this.greeting) : this.func(this.greeting);
+}
+
+var userFunc = function(greeting) {
+    console.log(greeting);
+}
+
+var objHello = new HelloFunc();
+objHello.func = userFunc;
+objHello.call();  // hello
+```
+* HelloFunc은 greeting 변수가 있고 func 프로퍼티로 참조되는 함수를 call() 함수로 호출한다.  
+* 사용자는 func 프로퍼티에 자신이 정의한 함수를 참조시켜 호출할 수 있다.  
+* HelloFunc.prototype.call()을 보면 자신의 지역 변수인 greeting 만을 인자로 사용자가 정의한 함수에 넘긴다.  
+* 사용자는 userFunc() 함수를 정의해서 objHello.func()에 참조시킨뒤, HelloFunc()의 지역변수인 greeting을 화면에 출력시킨다.  
+* HelloFunc()은 greeting 만을 인자로 넣어 사용자가 인자로 넘긴 함수를 실행시킨다. 그래서 사용자가 정의한 함수로 한 개의 인자를 받는 함수를 정의할 수 밖에 없다.  
+* 인자를 더 넣어서 HelloFunc()을 이용하여 호출하는 예제는 아래를 본다.  
+
+> 어렵다. 내가 이해한 내용  
+> func 함수가 바로 클로저.  
+> greeting이 자유변수  
+> 왜 그런진 모르지만 HelloFunc의 func **프로퍼티**가 있다.  
+> 이 프로퍼티로 참조되는 함수를 HelloFunc.prototype.call을 통해 호출할 수 있다.  
+> 사용자는 func 프로퍼티에 자신이 정의한 함수를 참조시켜 호출할 수 있다.  
+> 여기서 HelloFunc의 자유변수인 greeting에도 접근이 가능한 것.  
+
+```
+function saySomething(obj, methodName, name) {
+    return (function(greeting) {
+        return obj[methodName](greeting, name);
+    });
+}
+
+function newObj(obj, name) {
+    obj.func = saySomething(this, "who", name);
+    return obj;
+}
+
+newObj.prototype.who = function(greeting, name) {
+    console.log(greeting + " " + (name || "everyone"));
+}
+```
+
+* newObj()는 HelloFunc() 객체를 좀 더 자유롭게 활용하려고 정의한 함수  
+* 첫번째 인자인 obj는 HelloFunc()의 객체가 되고, 두번째 인자는 사용자가 출력을 원하는 사람 이름이 된다.  
+* newObj() 함수의 객체를 다음과 같이 만든다.  
+```
+var obj1 = new newObj(objHello, "zzoon");
+```
+* 첫번째 인자 obj의 func 프로퍼티에 saySomething() 함수에서 반환되는 함수를 참조하고, 반환한다.  
+* 결국 obj1은 인자로 넘겼던 objHello 객체에서 func 프로퍼티에 참조된 함수만 바뀐 객체가 된다.  
+```
+obj1.call(); //따라서 이렇게호출이 가능하다.(newObj.prototype.who 호출)// hello zzoon
+```
+
+* saySomething() 함수 안에서 어떤 작업이 수행되는가? 
+```
+function saySomething(obj, methodName, name) {
+    return (function(greeting) {
+        return obj[methodName](greeting, name);
+    });
+}
+```
+* 첫번째 인자: newObj 객체 - obj1
+* 두번째 인자 : 사용자가 정의한 메서드 이름 : who
+* 세번째 인자 : 사용자가 원하는 사람 이름 값 : zzoon  
+* 반환 : 사용자가 정의한 newObj.prototype.who() 함수를 반환하는 helloFunc()의 func 함수  
+
+이렇게 반환되는 함수가 HelloFunc이 참조하는 function(greeting){} 형식의 함수가 되는데, 이것이 HelloFunc 객체의 func으로 참조된다.  
+obj1.call()로 실행되는 것은 실질적으로 newObj.prototype.who()가 된다.  
+
+**자신의 객체 메서드인 who 함수를 HelloFunc에 연결시킬 수 있다.**  
+**여기서 클로저는 saySomething() 에서 반환되는 function(greeting){}이 되고, 이 클로저는 자유 변수 obj, methodName, name을 참조한다.**  
+
+앞 예제는 정해진 형식의 함수를 콜백해주는 라이브러리가 있을 겨우, 그 정해진 형식과는 다른 형식의 사용자 정의 함수를 호출할 때 유용하게 사용한다.  
+
+conclick, onmouseover과 같은 프로퍼티에 해당 이벤트 핸들러를 사용자가 정의해놓을 수가 있는데, 이 형식은 function(event){} 이다.  
+여기에서 event 외의 원하는 인자를 더 추가한 이벤트 핸들러를 사용하고 싶을 때 앞 예제와 같은 방식으로 클로저를 활용할 수 있다.  
+
+### 함수의 캡슐화  
+
+
 
 
