@@ -1424,7 +1424,159 @@ obj1.call()로 실행되는 것은 실질적으로 newObj.prototype.who()가 된
 conclick, onmouseover과 같은 프로퍼티에 해당 이벤트 핸들러를 사용자가 정의해놓을 수가 있는데, 이 형식은 function(event){} 이다.  
 여기에서 event 외의 원하는 인자를 더 추가한 이벤트 핸들러를 사용하고 싶을 때 앞 예제와 같은 방식으로 클로저를 활용할 수 있다.  
 
-### 함수의 캡슐화  
+#### 함수의 캡슐화  
+
+다음 코드의 문제점  
+```
+var buffAr = [
+    'I am',
+    '',
+    '. I live in ',
+    '',
+    '. I am',
+    '',
+    ' years old.',
+];
+
+function getCompletedStr(name, city, age) {
+    buffAr[1] = name;
+    buffAr[3] = city;
+    buffAr[5] = age;
+
+    return buffAr.join('');
+}
+
+var str = getCompletedStr('zzoon', 'seoul', 16);
+console.log(str)
+```
+* buffAr이라는 배열은 전역변수로서 외부에 노출되어 있다.  
+
+클로저를 활용하여 buffAr를 추가적인 스코프에 넣고 사용하게 하자.  
+```
+var getCompletedStr = (function() { // 익명1
+    var buffAr = [
+        'I am',
+        '',
+        '. I live in ',
+        '',
+        '. I am',
+        '',
+        ' years old.',
+    ];
+    
+    return (function(name, city, age) { // 익명2 
+        buffAr[1] = name;
+        buffAr[3] = city;
+        buffAr[5] = age;
+        
+        return buffAr.join('');
+    });
+})();
+
+var str = getCompletedStr('zzoon', 'seoul', 16);
+console.log(str);
+```
+* getCompletedStr에 익명의 함수(익명1)를 즉시 실행시켜 반환되는 함수(익명2)를 할당했다.  
+* 이 반환되는 함수(익명2)가 클로저가 되고, 이 클로저는 자유 변수 buffAr을 스코프 체인에서 참조할 수 있다.  
+
+#### setTimeout()에 지정되는 함수의 사용자 정의  
+
+#### setTimeout()
+* 첫 번째 인자로 넘겨지는 함수 실행의 스케줄링  
+* 두 번째 인자인 밀리 초 단위 숫자만큼의 시간 간격으로 해당 함수를 호출  
+
+내가 첫 번째 인자로 넘기는 함수에 인자를 주고 싶을 때 클로저를 이용해보자.
+```
+function callLater(obj, a, b) {
+    return (function() {
+        obj["sum"] = a + b;
+        console.log(obj["sum"]);
+    });
+}
+
+var sumObj = {
+    sum : 0
+}
+
+var func = callLater(sumObj, 1, 2);
+setTimeout(func, 500);
+```
+* 변수 func에 함수를 반환받아 setTimeout() 함수의 첫번째 인자로 넣어준다.  
+* 반환받는 함수는 당연히 클로저고 사용자가 원하는 인자에 접근할 수 있다.  
+
+### 클로저를 활용할 때 주의 사항  
+
+#### 클로저로 참조하는 자유객체 프로퍼티를 쓰기 까지 할 수 있으므로, 그 값이 여러번 호출될 경우 항상 변할 수 있다.  
+```
+function outerFunc(argNum) {
+    var num = argNum;
+    return function(x) {
+        num += x;
+        console.log('num: ' + num);
+    }
+
+}
+var exam = outerFunc(40);
+exam(5);
+exam(-10);
+```
+* 다음과 같이 exam 값을 호출할 때마다 자유 변수 num의 값은 계속해서 변화한다.  
+
+#### 하나의 클로저가 여러 함수 객체의 스코프 체인에 들어가 있는 경우도 있다.  
+```
+function func() {
+    var x = 1;
+    return {
+        func1 : function() {console.log(++x); },
+        func2 : function(){consol.elog(-x);}
+    };
+};
+
+var eam = func();
+exam.func1();
+exam.func2();
+```
+* 반환되는 객체에 2개의 함수가 정의되어 있고, 이 두 함수가 모두 자유 변수 x를 참조한다.  
+* 각각의 함수가 호출될 때마다 x 값이 변화하므로 주의한다.  
+
+#### 루프 안에서 클로저를 활용할 때는 주의하자.  
+
+```
+function countSeconds(howMany) {
+    for(var i = 1; i <= howMany; i++) {
+        setTimeout(function() {
+            console.log(i);
+        }, i * 100);
+    }
+};
+
+countSeconds(3);
+```
+* 1, 2, 3을 1초 간격으로 출력하는 의도로 만들었지만 4가 연속 3번 1초 간격으로 출력된다.  
+* setTimeout 함수의 인자로 들어가는 함수는 자유 변수 i를 참조한다.  
+* 이 함수가 실행되는 시점은 countSeconds() 함수의 실행이 종료된 이후이다.  
+* i 는 이미 4가 된 상태이므로 모두 4를 출력하게 된다.  
+
+루프 i값 복사본을 함수에 넘겨주는 방법을 즉시 실행함수를 사용하여 해결해보자.  
+```
+function countSeconds(howMany) {
+    for(var i = 1; i <= howMany; i++) {
+        (function(currentI) {
+            setTimeout(function() {
+                console.log(currentI);
+            }, currentI * 1000);
+        }(i));
+    }
+};
+
+countSeconds(3);  
+```
+
+* 루프 i 값을 즉시실행 함수를 실행시켜 currentI에 복사해서 setTimeout()에 들어갈 함수에 사용하면 원하는 결과를 얻을 수 있다.  
+
+
+# 06 객체지향 프로그래밍  
+
 
 
 
