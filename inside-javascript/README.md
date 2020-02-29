@@ -1577,7 +1577,376 @@ countSeconds(3);
 
 # 06 객체지향 프로그래밍  
 
+클래스 기반의 언어와 프로토타입 기반의 언어  
 
+#### 클래스 기반의 언어  
+* 클래스로 객체의 기본적인 형태와 기능을 정의  
+* 생성자로 인스턴스를 만들어서 사용할 수 있다.  
+* Java, C++  
+* 모든 인스턴스가 클래스에 정의된 대로 같은 구조이고, 보통 런타임에 바꿀 수 없다.  
+* 정확성, 안전성, 예측성  
 
+#### 프로토타입 기반의 언어  
+* 객체의 자료구조, 메서드 등을 동적으로 바꿀 수 있다.  
+* 유연성  
+* JavaScript  
 
+## 클래스, 생성자, 메서드  
+
+자바스크립트는 모든 것이 객체이고, 특히 함수 객체로 클래스, 생성자, 메서드 모두 구현 가능하다.  
+
+```
+function Person(arg) {
+    this.name = arg;
+
+    this.getName = function() {
+        return this.n ame;
+    }
+
+    this.setName = function(value) {
+        this.name = value;
+    }
+}
+
+var me = new Person("zzoon");
+console.log(me.getName()); // zzoon  
+
+me.setName("iamhjoo");
+console.log(me.getName()); // iamhhoo
+```
+
+* ```new```를 통해 새로운 객체 me를 만들었다.  
+* 함수 Person이 클래스이자 생성자의 역할을 한다.  
+* 클래스 및 생성자의 역할을 하는 함수가 있고, 사용자는 new 키워드오 인스턴스를 생성하여 사용한다.  
+
+new를 이용해서 여러 객체를 생성할 경우 문제가 된다.  
+* 각 객체는 자기 영역에서 공통으로 사용할 수 있는 getName, setName 함수를 따로 생성하고 가지고 있어, 중복되는 영역을 메모리에 올려놓고 사용한다.  
+* 이를 해결하기 위해 함수 객체의 프로토타입 특성을 이용한다.  
+
+```
+function Person(arg) {
+    this.name = arg;
+}
+
+Person.prototype.getName = function() {
+    return this.name;
+}
+
+Person.prototype.setName = function(value) {
+    this.name = value;
+}
+
+var me = new Person("me");
+var you = new Person("you");
+console.log(me.getName());
+console.log(you.getName());
+```
+
+* Person 함수 객체의 prototype 프로퍼티에 getName()과 setName() 함수를 정의했다.  
+* 각 객체는 각자 따로 함수 객체를 생성할 필요 없이, **getName()과 setName()을 함수 프로토타입 체인으로 접근할 수 있다.**  
+
+**클래스 안의 메서드를 정의할 때, 프로토타입 객체에 정의한 후, new로 생성한 객체에서 접근할 수 있게 하는 것이 좋다.  
+```
+Function.prototype.method = function(name, func) {
+    if(!this.prototype[name]){
+        this.prototype[name] = func;
+    }
+}
+```
+
+이를 이용하면 다음과 같다.  
+
+```
+Function.prototype.method = function(name, func) {
+    // 함수 프로토타입에 method라는 메소드 정의
+    this.prototype[name] = func;
+}
+
+function Person(arg) {
+    // 함수 정의
+    this.name = arg;
+}
+
+Person.method("setName", function(value) {
+    // 프로토타입 체인을 통해 method 사용 가능
+    this.name = value;
+});
+
+Person.method("getName", function() {
+    return this.name;
+});
+
+var me = new Person("me");
+var you = new Person("you");
+console.log(me.getName());
+console.log(you.getName());
+```
+
+> 함수를 생성자로 사용하여 프로그래밍하는 것을 추천하지 않는다.  
+> new로 호출될 수 있고, 직접 호출도 가능해지면  this에 바인딩 되는 객체가 달라지기 때문이다.  
+> 이 때문에 생성자로 사용되는 함수는 첫 글자를 대문자로 표기할 것을 권장한다.  
+
+## 상속  
+
+**객체 프로토타입 체인을 이용하여 상속을 구현한다.**  
+1. 클래식 기반 전통적인 상속 방식을 흉내내는 방법  
+2. 클래스 개념없이 객체의 프로토타입으로 상속을 구현하는 방법 (프로토타입을 이용한 상속(Prototypal inferitance)) - 객체 리터럴을 중심으로 프로토타입을 이용해 상속을 구현한다.  
+
+### 프로토타입을 이용한 상속  
+
+```
+function create_object(o) {
+    function F() {}
+    F.prototype = o;
+    return new F();
+}
+```
+* create_object() 함수는 인자로 들어온 객체를 **부모로 하는 자식 객체를 생성하여 반환한다.**  
+* 새로운 빈 함수 객체 F를 만들고, F.prototype 프로퍼티에 인자로 들어온 객체를 참조한다.  
+* 이렇게 반환된 객체는 **부모 객체의 프로퍼티에 접근할 수 있고, 자신만의 프로퍼티를 만들 수 있다.**  
+* create_object() 함수는 ES5에서 Object.create() 함수로 제공되므로 따로 구현할 필요는 없다.  
+
+이를 이용한 예제를 보자.  
+```
+var person = {
+    name: "zzoon",
+    getName: function() {
+        return this.name;
+    },
+    setName: function(arg) {
+        this.name = arg;
+    }
+};
+
+function create_object(o) {
+    function F() {};
+    F.prototype = o;
+    return new F();
+}
+
+var student = create_object(person);
+
+student.setName("me");
+console.log(student.getName()); // me
+```
+
+* 생성자 함수를 만들지도 않았고 (대문자 함수), 그 클래스의 인스턴스를 따로 생성하지도 않았다.  
+* 단지 부모 객체에 해당하는 person 객체와 이 객체를 프로토타입 체인으로 참조할 수 있는 자식 객체 student를 만들었다.  
+
+부모객체를 상속받았다면, 자식은 메서드를 재정의 혹은 추가로 기능 확장 시킬 수 있어야 한다.  
+```
+student.setAge = funtion(age) { ... }
+student.getAge = function() {....}  
+```
+다음 방법으로 가능하지만 코드가 지저분해질 수 있다.  
+Javascript에서는 범용적으로 **extend()**라는 이름의 함수를 구현해서 객체에 자신이 원하는 객체 혹은 함수를 추가시킨다.  
+
+jQuery 1.0 의 예를 살펴보자.  
+```
+jQuery.extend = jQuery.fn.extend = function(obj, prop) {
+    if(!prop) { prop = obj; obj = this; }
+    for( var i in prop ) obj[i] = prop[i];
+    return obj;
+}
+```
+
+* ```jQuery.fn```은 ```jQuery.prototype``` 이다.  
+* jQuery 함수 객체와 jQuery 함수 객체의 인스턴스 모두 extend 함수가 있도록 하겠다는 뜻이다.  
+* ```jQuery.extend()``` 와 ```var elem = new jQuery(..); elem.extend();```로 호출 가능하다.  
+* 함수의 인자가 1개만 들어오는 경우에는 현재 객체(this)에 인자로 들어오는 객체의 프로퍼티를 복사함을 의미한다.  
+* 두개가 들어오는 경우에는 첫번째 객체에 두번째 객체의 프로퍼티를 복사한다.  
+* 두번째 인자가 있는 경우 루프를 돌면서 prop의 프로퍼티를 obj로 복사한다.  
+
+이 코드의 약점  
+* ```obj[i] = prop[i];```는 얕은 복사이다.  
+* 객체의 경우 해당 객체를 복사하지 않고 참조한다.  
+* 두번째 객체의 프로퍼티가 변경되면 첫번째 객체의 프로퍼티도 같이 변경된다.  
+* 그러므로 보통 extend 함수를 구현하는 경우 대상이 객체일 때는 깊은 복사를 하는 것이 일반적이다.  
+
+jQuery의 1.7 코드는 다음과 같이 개선되었다.(책 참고. p.179)  
+
+> 깊은 복사를 하기 위해서는 복사하려는 대상이 객체인경우, **빈 객체를 만들어 extend 함수를 재귀적으로 다시 호출하는 방법을 쓴다.  
+> 함수 객체인 경우는 그대로 얕은 복사를 진행한다. (?)  
+
+```
+for(; i < length; i++) {
+    //Only deal with non-null/undefined values  
+    if((options = arguments[i]) != null) { // 1
+        //Extend the base object  
+        for(name in options) {
+            src = target[name]; // 2
+            copy = options[name];
+
+            //Prevent never-ending loop
+            if(target === copy) {
+                continue;
+            }
+            //Recurse if we're merging plain objects or arrays
+            if(deep && copy && (jQuery.isPlainObject(copy) || (copyIsArray = jQuery.isArray(copy)))) { // 3
+                if(copyIsArray) { // 4
+                    copyIsArray = false;
+                    clone = src && jQuery.isArray(src) ? src : [];
+                } else {
+                    clone = src && jQuery.isPlainObject(src) ? src : {}'
+                }
+
+                //Never move original objects, clone them
+                target[name] = jQuery.extend(deep, clone, copy); // 5
+
+            //Don't bring in undefined values
+            } else if (copy !== undefined) { // 6
+                target[name] = copy;
+            }
+        }
+    }
+    //Return the modified objects
+    return target; // 7
+}
+```
+
+```
+var person = {
+    name: "zzoon",
+    getName: function() {
+        return this.name;
+    },
+    setName: function(arg) {
+        this.name = arg;
+    }
+};
+
+function create_object(o) {
+    function F() {};
+    F.prototype = o;
+    return new F();
+}
+
+function extend(obj, prop) {
+    if(!prop) {prop = obj; obj = this;}
+    for(var i in prop) obj[i] = prop[i];
+    return obj;
+}
+
+var student = craete_object(person);
+var added = {
+    setAge : function(age) {
+        this.age = age;
+    },
+    getAge: function() {
+        return this.age;
+    }
+};
+
+extend(student, added);
+
+student.setAge(25);
+console.log(student.getAge());
+```
+
+* 얕은 복사를 사용하는 extend() 함수를 사용하여 student를 확장시켰다.  
+* extend() 함수를 기억하자.  
+
+### 클래스 기반의 상속  
+
+함수의 프로토타입을 적절히 엮어서 상속을 구현한다.  
+객체 리터럴로 생성된 객체가 아니라 클래스의 역할을 하는 함수로 상속을 구현한다.  
+
+```
+function Person(arg) {
+    this.name = arg;
+}
+
+Person.prototype.setName = function(value) {
+    this.name = value;
+};
+
+Person.prototype.getName = function() {
+    return this.name;
+};
+function Student(arg) {
+
+}
+var you = new Person("iamhjoo");
+Student.prototype = you;  
+
+var me = new Student("zzoon");
+me.setName("zzoon");
+console.log(me.getName());
+```
+* Student 함수객체를 만들어서, 이 함수 객체의 프로토타입으로 Person 함수 객체의 인스턴스를 참조하게 만들었다.  
+* Student 함수 객체로 생성된 객체 me의 [[Prototype]]링크가 생성자의 프로토타입 프로퍼티 Student.prototyp인 you를 가리킨다.  
+* new Person()으로 만들어진 객체의 [[Prototype]] 링크는 Person.prototype을 가리키는 프로토타입 체인이 형성된다.  
+* me는 Person.prototype 프로퍼티에 접근할 수 있고, setName()과 getName()을 호출할 수 있다.  
+
+이 예제는 문제가 있다.  
+* me는 Person 생성자를 호출하지 않는다.  
+* "zzoon"을 인자로 넘겼지만 이를 반영하는 코드는 없으므로 me 객체는 빈객체이다.  
+* setName 메서드가 호출되고 나서야 me 객체에 name 프로퍼티가 만들어진다.  
+* 부모의 생성자가 호출되지 않으면 인스턴스의 초기화가 제대로 이루어지지 않아 문제가 발생할 수 있다.  
+* 이를 해결하기 위해 다음 코드를 추가한다.  
+
+```
+function Student(agr) {
+    Person.apply(this, arguments);
+}
+```
+* Student 함수안에서 새롭게 생성된 객체를 apply 함수의 첫번째 인자로 넘겨 Person 함수를 실행시킨다.  
+* 클래스 간의 상속에서 하위 클래스의 인스턴스를 생성할 때 부모클래스의 생성자를 호출해야 할 때 필요하다.  
+* 더 발전시켜, 자신 클래스의 객체가 부모 클래스의 객체를 프로토타입 체인으로 직접 접근하지 않고, 부모 클래스의 인스턴스와 자식 클래스의 인스턴스가 서로 독립적으로 되도록 한다.(그림참고 p.185)  
+* 자식 클래스의 prototype이 부모 클래스의 인스턴스를 참조한다. 자식 클래스의 prototype에 메소드를 추가할 때 문제가 된다. -> 독립적이어야 한다.  
+
+```
+function Person(arg) {
+    this.name = arg;
+}
+
+Function.prototype.method = function(name, func) {
+    this.prototype[name] = func;
+}
+
+Person.method("setName", function(value) {
+    this.name = value;
+});
+Person.method("getName", function() {
+    return this.name;
+});
+
+function Student(arg) {
+
+}
+
+function F() {};
+F.prototype = Person.prototype;
+Student.prototype = new F();
+Student.prototype.contructor = Student;  
+Student.super = Person.prototype;
+
+var me = new Student();
+me.setName("zzoon");
+console.log(me.getName());
+```
+* 프로토타입을 이용한 상속 방식과 유사하다.  
+* 여기서도 빈 함수 F()를 생성하고 이 F() 인스턴스를 Person.prototype과 Student 사이에 두었다.  
+* 이 인스턴스를 Student.prototype에 참조되게 한다.(그림 참고 P.186)  
+* 빈 함수의 객체를 중간에 두어 Person의 인스턴스와 Student의 인스턴스를 서로 독립적으로 만들었다.
+* Person 함수 객체에서 this에 바인딩 되는 것은 Student의 인스턴스가 접근할 수 없다.  
+* 자식 클래스의 prototype 객체는 빈 객체이다. 이 곳에, 자식 클래스의 확장된 데이터와 메소드가 들어갈 수 있다.  
+* 각 클래스의 객체의 me와 you가 아무런 관계 없이 독립적이다.  
+
+상속 관계를 즉시 실행 함수와 클로저를 활용하여 최적화된 함수 예시  
+```
+var inherit = function(Parent, Child) {
+    var F = function() {};
+    return function(Parent, Child) {
+        F.prototype = Parent.prototype;
+        Child.prototype = new F();
+        Child.prototype.constructor = Child;
+        Child.super = Parent.prototype;
+    }
+}();
+```
+* 클로저(반환되는 함수)는 F() 함수를 지속적으로 참조하므로, F()는 가비지 컬렉션 대상이 되지 않고 남아있다.  
+* 함수 F() 의 생성은 단 한 번 이루어지고 inherit 함수가 계속해서 호출되어도 함수 F()의 생성을 새로 할 필요가 없다.  
+
+## 캡슐화  
 
