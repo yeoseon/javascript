@@ -1950,3 +1950,112 @@ var inherit = function(Parent, Child) {
 
 ## 캡슐화  
 
+여러가지 정보를 하나의 틀 안에 담는 것  
+멤버 변수와 메서드가 서로 관련된 정보.  
+클래스가 이 것을 담는 하나의 큰 틀  
+**정보 은닉**을 JavaScript를 통해 구현하자.  
+
+```
+var Person = function(arg) {
+    var name = arg ? arg : "zzoon";
+
+    this.getName = function() {
+        return name;
+    }
+
+    this.setName = function(arg) {
+        name = arg; 
+    }
+};
+
+var me = new Person();
+console.log(me.getName());
+me.setName("iamhjoo");
+console.log(me.getName());
+console.log(me.name); // undefined  
+```
+
+* this 객체의 프로퍼티로 선언하면 외부에서 new 키워드로 생성한 객체로 접근할 수 있다.  
+* var로 선언된 멤버들은 외부에서는 접근이 불가능하다.  
+* public 메서드가 클로저 역할을 하면서 private 멤버인 name에 접근할 수 있다.  
+
+더 깔끔하게 다듬자.  
+**모듈 패턴으로 많이 쓰이니, 참고할 것**  
+
+```
+var Person = function(age) {
+    var name = arg ? arg : "zzoon";
+
+    return {
+        getName: function() {
+            return name;
+        }
+        setName: function(arg) {
+            name = arg;
+        }
+    };
+}
+
+var name = Person(); /* or var me = new Person(); */
+console.log(me.getName());
+```
+
+* Person함수를 호출하여 객체를 반환한다.  
+* 이 객체에 Person 함수의 private 멤버 변수에 접근할 수 있는 메서드가 담겨있다.  
+* 사용자는 반환받는 객체로 메서드를 호출할 수 있고 private 멤버에 접근할 수 있다.  
+* 접근하는 private 멤버가 **객체가 배열이면 얕은 복사로 참조만을 반환하므로, 이후 쉽게 변경될 수 있다.**  
+
+다음 문제가 잘 보여준다.  
+
+```
+var ArrCreate = function(arg) {
+    var arr = {1,2,3};
+
+    return {
+        getArr: function() {
+            return arr;
+        }
+    };
+}
+
+var obj = ArrCreate(); /* or var me = new Person(); */
+var arr = obj.getArr();
+arr.push(5);
+console.log(obj.getArr()); // [1, 2, 3, 5]  
+```
+* 이렇게 객체가 변경되므로 객체를 반환하는 경우 신중해야 한다.  
+* 보통 객체를 반환하지 않고 객체의 주요 정보를 새로운 객체에 담아서 반환한다.  
+* 꼭 객체가 반환되어야 하는 경우 **깊은 복사**로 복사본을 만들어서 반환한다.  
+* 위 예제는 사용자가 반환받은 객체는 Person 함수 객체의 프로토타입에는 접근할 수 없다.  
+* Person을 부모로 하는 프로토타입을 이용한 상속을 구현하기 용이하지 않다.  
+
+개선해보자.  
+
+```
+var Person = function(arg) {
+    var name = arg ? arg : "zzoon";
+
+    var Func = function() {}
+
+    Func.prototype = {
+        getName: function() {
+            return name;
+        },
+        setName: function(arg) {
+            name = arg;
+        }
+    };
+
+    return Func;
+}();
+
+var me = new Person();
+consol.elog(me.getName());
+```
+
+* 클로저를 이용하여 name에 접근할 수 없도록 한다.  
+* 즉시실행함수에서 반환되는 Func이 클로저가 되고, 이 함수가 참조하는 name 프로퍼티가 자유변수.  
+* 사용자는 name에 대한 접근이 불가능하다.  
+
+## 객체지향 프로그래밍 응용 예제  
+
