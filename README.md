@@ -10,6 +10,7 @@ JavaScript의 모든 것을 알아보자
 * [JavaScript의 데이터 타입과 연산자](./inside-javascript/README.md/#03-자바스크립트-데이터-타입과-연산자)  
 * [함수와 프로토타입 체이닝](./inside-javascript/README.md/#04-함수와-프로토타입-체이닝)  
 * [실행 컨텍스트와 클로저](./inside-javascript/README.md#05-%EC%8B%A4%ED%96%89-%EC%BB%A8%ED%85%8D%EC%8A%A4%ED%8A%B8%EC%99%80-%ED%81%B4%EB%A1%9C%EC%A0%80)  
+* [객체지향 프로그래밍](https://github.com/yeoseon/javascript/blob/master/inside-javascript/README.md#06-%EA%B0%9D%EC%B2%B4%EC%A7%80%ED%96%A5-%ED%94%84%EB%A1%9C%EA%B7%B8%EB%9E%98%EB%B0%8D)  
 
 ## 프로젝트별 분류  
 
